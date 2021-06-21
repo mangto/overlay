@@ -1,7 +1,8 @@
-import pygame, win32api, win32con, win32gui, os,sys, math
+import pygame, win32api, win32con, win32gui, os,sys, math, subprocess
 from win32api import GetSystemMetrics
 from ctypes import windll
 import ctypes
+from threading import Thread
 from pygame import gfxdraw
 from win32con import SWP_NOMOVE 
 from win32con import SWP_NOSIZE 
@@ -11,6 +12,7 @@ from win32con import HWND_TOPMOST
 from win32con import GWL_EXSTYLE 
 from win32con import WS_EX_TOOLWINDOW
 import win32gui, win32con
+import pygetwindow as gw
 import keyboard
 
 
@@ -22,7 +24,7 @@ winposx = -20
 winposy = (GetSystemMetrics(1)-winH)/2-80
 os.environ['SDL_VIDEO_WINDOW_POS'] = "%d,%d" % (winposx,winposy)
 window = pygame.display.set_mode([1,1],pygame.NOFRAME)
-pygame.display.set_caption("GICON OVERLAY")
+pygame.display.set_caption("DELU OVERLAY")
 clock = pygame.time.Clock()
 fps = 60
 state_left = win32api.GetKeyState(0x01)
@@ -40,7 +42,7 @@ hwnd = pygame.display.get_wm_info()["window"]
 win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE,
                        win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE) | win32con.WS_EX_LAYERED)
 win32gui.SetLayeredWindowAttributes(hwnd, win32api.RGB(*(255,0,128)), 255, win32con.LWA_COLORKEY)
-hwnd = win32gui.FindWindow(None, "GICON OVERLAY")
+hwnd = win32gui.FindWindow(None, "DELU OVERLAY")
 win32gui.ShowWindow(hwnd, win32con.SW_HIDE)
 
 def hide_from_taskbar(hw):
@@ -296,9 +298,14 @@ class system:
         global fps
         clock.tick(fps)
     def event():
-        global dx,dy, working, selector,selectorsize, winposx,winposy,move, Mdistance, mainimage, pos ,posx
+        global dx,dy, working, selector,selectorsize, winposx,winposy,move, Mdistance, mainimage, pos ,posx, titlelist, summoned
+
         flags, hcursor, (px,py) = win32gui.GetCursorInfo()
         Mdistance = math.sqrt((winposx+25-px)**2+(winposy+25-py)**2)
+        if Mdistance < 25:
+            if summoned == False:
+                subprocess.Popen(['subwindow.py'], shell=True, creationflags=subprocess.SW_HIDE)
+                summoned = True
         mx = px - winposx
         my = py - winposy
         moveWin()
@@ -313,6 +320,9 @@ class system:
                 mx, my = pygame.mouse.get_pos()
                 if event.button == 1:
                     dx, dy = pygame.mouse.get_pos()
+
+summoned = False
+
 while working:
     system.control()
     system.event()
